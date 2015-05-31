@@ -162,12 +162,12 @@ namespace RemoteConsoleChat
 
                 if (args.Text.StartsWith("/"))
                 {
-                    string message = "`8:``[" + player.Group.Prefix + "] <" + player.Name + ">" + text;
+                    string message = "`8:``" + player.Group.Prefix + " " + player.Name + ": " + text;
                     connection.SendMessageConsole(message);
                 }
                 else
                 {
-                    connection.SendMessageConsole(String.Format("{0}: {1}", name, args.Text));
+                    connection.SendMessageConsole(String.Format("{0}: {1}", player.Group.Prefix + " " + name, args.Text));
                     return;
                 }
             }

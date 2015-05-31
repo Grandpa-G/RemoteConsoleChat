@@ -14,6 +14,7 @@ using System.Threading;
 using System.Reflection;
 using System.Drawing;
 using System.Collections.Concurrent;
+using System.Text;
 
 using TShockAPI;
 
@@ -124,8 +125,8 @@ namespace RemoteConsoleChat
                 string strDateLine = "`3:" + "``Welcome " + now.ToString("G") + " Version: " + Assembly.GetExecutingAssembly().GetName().Version + "|" + workerSocket.RemoteEndPoint;
 
                 // Convert to byte array and send.
-                Byte[] byteDateLine = System.Text.Encoding.ASCII.GetBytes(strDateLine.ToCharArray());
-//                SendMessageConsole(strDateLine);
+                Byte[] byteDateLine = System.Text.Encoding.UTF8.GetBytes(strDateLine.ToCharArray());
+                                SendMessageConsole(strDateLine);
 
                 // Let the worker Socket do the further processing for the 
                 // just connected client
@@ -191,20 +192,32 @@ namespace RemoteConsoleChat
                 // by the client
 
                 int iRx = socketData.m_currentSocket.EndReceive(asyn);
+
+                if (iRx < 3)
+                    return;     // not our packet.
+
                 char[] chars = new char[iRx];
                 // Extract the characters as a buffer
                 System.Text.Decoder d = System.Text.Encoding.UTF8.GetDecoder();
                 int charLen = d.GetChars(socketData.dataBuffer, 0, iRx, chars, 0);
 
                 System.String sRecieved = new System.String(chars);
+
                 string msg = "" + socketData.m_clientNumber + ":";
 
                 byte[] byteData = null;
 
                 Socket workerSocket = (Socket)socketData.m_currentSocket;
-
                 int pIndex = 0;
-                string action = sRecieved.Substring(0, 3);
+                string action = "";
+                try
+                {
+                    action = sRecieved.Substring(0, 3);
+                }
+                catch
+                {
+                    return;     // packet too small
+                }
                 string message = "";
                 if (sRecieved.Length > 8)
                     message = sRecieved.Substring(8);
@@ -219,17 +232,17 @@ namespace RemoteConsoleChat
                 privateChatColor.B = (byte)RemoteChat.statConfig.consolePrivateChatRGB[2];
                 int playerIndex;
                 string[] s;
-//                Console.WriteLine("|" + action + "|" + sRecieved);
+//                                Console.WriteLine("|" + action + "|" + sRecieved);
                 switch (action)
                 {
                     case "`0:":     //private chat from console to player
                         string pi = sRecieved.Substring(3, 4);
                         if (Int32.TryParse(pi, out pIndex))
                         {
-                            TShockAPI.TShock.Players[pIndex].SendMessage(RemoteChat.statConfig.consolePrivateChatPrefix + RemoteChat.statConfig.consoleName + ": " + sRecieved.Substring(8), privateChatColor);
-                            //                            msg = String.Format("{0}: {1}", TShockAPI.TShock.Players[pIndex].Name, message);
+
+                            TShockAPI.TShock.Players[pIndex].SendMessage(RemoteChat.statConfig.consolePrivateChatPrefix + " " + RemoteChat.statConfig.consoleName + ": " + sRecieved.Substring(8), privateChatColor);
                             msg = String.Format("{0}: {1}", RemoteChat.statConfig.consoleName, message);
-                            byteData = System.Text.Encoding.ASCII.GetBytes(msg);
+                            byteData = System.Text.Encoding.UTF8.GetBytes(msg);
                             workerSocket.Send(byteData);
                             m_playerChannelList[pIndex] = workerSocket.RemoteEndPoint.ToString();
                         }
@@ -241,8 +254,9 @@ namespace RemoteConsoleChat
                         break;
                     case "`2:":
                         msg = String.Format("{0}: {1}", RemoteChat.statConfig.consoleName, message);
-                        byteData = System.Text.Encoding.ASCII.GetBytes(msg);
+//                        byteData = System.Text.Encoding.ASCII.GetBytes(msg);
                         SendMessageConsole(msg);
+
                         TShockAPI.TSPlayer.All.SendMessage(msg, chatColor);
                         break;
                     case "`3:":     //response from welcome from console
@@ -256,7 +270,7 @@ namespace RemoteConsoleChat
                         break;
                     case "`8:":     // send to main console history
                         s = sRecieved.Split('`');
-                        SendMessageConsole("`8:``" + "<" + RemoteChat.statConfig.consoleName + ">" + s[3]);
+                        SendMessageConsole("`8:``" + RemoteChat.statConfig.consoleName + " " + s[3]);
                         break;
                     case "`9:":
                         s = sRecieved.Split('`');
@@ -264,7 +278,7 @@ namespace RemoteConsoleChat
                         if (playerIndex >= 0)
                             m_playerChannelList[playerIndex] = null;
 
- //                       Console.WriteLine(workerSocket.RemoteEndPoint.ToString() + " disconnected.");
+                        //                       Console.WriteLine(workerSocket.RemoteEndPoint.ToString() + " disconnected.");
                         Socket ws;
                         channelSockets.TryRemove(workerSocket.RemoteEndPoint.ToString(), out ws);
                         break;
@@ -312,7 +326,7 @@ namespace RemoteConsoleChat
 
             try
             {
-                byte[] byData = System.Text.Encoding.ASCII.GetBytes(msg);
+                byte[] byData = System.Text.Encoding.UTF8.GetBytes(msg);
                 if (consoleSocket == null)
                     return false;
                 if (consoleSocket.Connected)
@@ -340,7 +354,7 @@ namespace RemoteConsoleChat
 
             try
             {
-                byte[] byData = System.Text.Encoding.ASCII.GetBytes(msg);
+                byte[] byData = System.Text.Encoding.UTF8.GetBytes(msg);
                 Socket workerSocket = null;
                 if (!channelSockets.TryGetValue(connectionEndPoint, out workerSocket))
                     return false;
