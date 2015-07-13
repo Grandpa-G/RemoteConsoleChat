@@ -12,18 +12,14 @@ using System.Drawing;
 
 using Terraria;
 using TShockAPI;
-using Mono.Data.Sqlite;
-using MySql.Data.MySqlClient;
-using Newtonsoft.Json;
 using System.Threading;
 using TerrariaApi.Server;
-using Newtonsoft.Json.Linq;
 using System.Net;
 using System.Net.Sockets;
 
 namespace RemoteConsoleChat
 {
-    [ApiVersion(1, 17)]
+    [ApiVersion(1, 19)]
     public class RemoteChat : TerrariaPlugin
     {
         public TcpListener listner;
@@ -155,7 +151,10 @@ namespace RemoteConsoleChat
                 if (args.Text.ToLower().StartsWith("/login"))
                 {
                     string[] msg = args.Text.Split(' ');
+                    if(msg.Length > 2)
                     text = String.Format("{0} {1} *****", msg[0], msg[1]);
+                    else
+                    text = String.Format("{0} *****", msg[0]);
                 }
                 else
                     text = args.Text;

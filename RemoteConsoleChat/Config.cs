@@ -41,7 +41,7 @@ namespace RemoteConsoleChat
         {
             Config cfg = new Config();
             cfg.debugChat = false;
-            cfg.ipServer = Terraria.Netplay.serverListenIP.ToString();
+            cfg.ipServer = Terraria.Netplay.ServerIP.ToString();
             cfg.chatPort = 25565;
             cfg.chatOn = true;
             cfg.consoleName = "Console";
